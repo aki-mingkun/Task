@@ -6,21 +6,25 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [token, setTokenState] = useState(() => getToken().access);
+  // Lấy username từ localStorage (ưu tiên key 'username')
+  const [token, setTokenState] = useState(() => {
+    const username = localStorage.getItem('username');
+    return username || getToken().username || '';
+  });
 
   const setToken = (newToken) => {
     setTokenState(newToken);
     if (newToken) {
-      saveToken({ access: newToken, refresh: getToken().refresh });
+      saveToken({ username: newToken });
     } else {
       clearToken();
     }
   };
 
   useEffect(() => {
-    const storedToken = getToken().access;
-    if (storedToken) {
-      setTokenState(storedToken);
+    const username = localStorage.getItem('username');
+    if (username) {
+      setTokenState(username);
     }
   }, []);
 

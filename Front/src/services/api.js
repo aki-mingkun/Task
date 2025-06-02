@@ -5,6 +5,7 @@ const api = axios.create({
 });
 
 export const signup = async (userData) => {
+  // userData: {username, password, email}
   const response = await api.post('/register', userData);
   return response.data;
 };
@@ -22,5 +23,15 @@ export const getTasks = async (username) => {
 
 export const createTask = async (taskData) => {
   const response = await api.post('/task', taskData);
+  return response.data;
+};
+
+export const updateTask = async (taskId, updateData) => {
+  const response = await api.put(`/task/${taskId}`, updateData);
+  return response.data;
+};
+
+export const deleteTask = async (taskId) => {
+  const response = await api.delete(`/task/${taskId}`);
   return response.data;
 };

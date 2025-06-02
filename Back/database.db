@@ -1,1 +1,1 @@
-{"users":{"Ming":{"password":"as"}}}
+{"users":{"Ming":{"password":"as"},"Mint":{"password":"as","email":"thuminh1995hp@gmail.com"}},"all_tasks":[{"id":"7c9f3a82-e939-4650-8aa0-879818d0e888","title":"12","description":"1","due_date":"2025-06-15","status":"in_progress","priority":"medium","created_by":"Mint","assigned_user":"Ming"}]}

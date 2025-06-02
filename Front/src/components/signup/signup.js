@@ -29,11 +29,14 @@ const Signup = () => {
       setError('Username, email, and password are required.');
       return;
     }
-
     setLoading(true);
-
     try {
-      const data = await signup(formData);
+      // Gửi cả email
+      const data = await signup({
+        username: formData.username,
+        password: formData.password,
+        email: formData.email,
+      });
       console.log('Signup successful', data);
       toast.success('Signup successful! Please login to continue.');
       navigate('/login');

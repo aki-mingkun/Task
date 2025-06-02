@@ -35,6 +35,7 @@ const Login = () => {
       const data = await login(formData);
       // Lưu username vào localStorage để dùng cho các request sau này
       setToken({ username: formData.username });
+      localStorage.setItem('username', formData.username); // Thêm dòng này
       setAuthContextToken(formData.username);
       toast.success('Login successful!');
       navigate('/dashboard');

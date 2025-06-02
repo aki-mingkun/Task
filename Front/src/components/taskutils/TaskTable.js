@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import moment from 'moment';
 
-const TaskTable = ({ tasks }) => {
+const TaskTable = ({ tasks, handleDelete, handleEdit }) => {
   if (!tasks || tasks.length === 0) {
     return null;
   }
@@ -30,6 +30,12 @@ const TaskTable = ({ tasks }) => {
             <th scope="col" className="px-6 py-3">
               Priority
             </th>
+            <th scope="col" className="px-6 py-3">
+              Assigned To
+            </th>
+            <th scope="col" className="px-6 py-3">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -52,6 +58,25 @@ const TaskTable = ({ tasks }) => {
               </td>
               <td className="px-6 py-4 whitespace-nowrap">{task.status}</td>
               <td className="px-6 py-4 whitespace-nowrap">{task.priority}</td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                {task.assigned_user}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <button
+                  className="text-blue-500 hover:text-blue-700 mr-2"
+                  onClick={() => handleEdit && handleEdit(task)}
+                  title="Edit"
+                >
+                  <i className="fas fa-edit"></i>
+                </button>
+                <button
+                  className="text-red-500 hover:text-red-700 ml-2"
+                  onClick={() => handleDelete && handleDelete(task.id)}
+                  title="Delete"
+                >
+                  <i className="fas fa-trash"></i>
+                </button>
+              </td>
             </motion.tr>
           ))}
         </tbody>

@@ -22,9 +22,7 @@ const TaskForm = () => {
   const [priority, setPriority] = useState(
     currentTask ? currentTask.priority : 'low'
   );
-  const [assignedUser, setAssignedUser] = useState(
-    currentTask ? currentTask.assigned_user : ''
-  );
+  const [assignedUser, setAssignedUser] = useState('');
   const [users, setUsers] = useState([]);
   const [formOpen, setFormOpen] = useState(true);
 
@@ -35,9 +33,11 @@ const TaskForm = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Lấy username từ tokens trong localStorage
-    const tokens = JSON.parse(localStorage.getItem('tokens')) || {};
-    setUsername(tokens.username || '');
+    // Lấy username từ localStorage (ưu tiên key 'username')
+    const usernameStored = localStorage.getItem('username');
+    setUsername(usernameStored || '');
+    // Nếu chưa có assignedUser, gán luôn là username
+    setAssignedUser((prev) => prev || usernameStored || '');
     setLoading(false);
   }, []);
 
@@ -90,6 +90,7 @@ const TaskForm = () => {
         due_date: dueDate,
         status,
         priority,
+        // Đảm bảo assigned_user luôn là username nếu không chọn ai
         assigned_user: assignedUser || username,
       },
     };
@@ -257,12 +258,15 @@ const TaskForm = () => {
               value={assignedUser}
               onChange={(e) => setAssignedUser(e.target.value)}
             >
-              <option value="">Select Assignee</option>
-              {users.map((user) => (
-                <option key={user} value={user}>
-                  {user}
-                </option>
-              ))}
+              {/* Nếu chưa chọn ai, mặc định là username hiện tại */}
+              <option value={username}>{username}</option>
+              {users
+                .filter((user) => user !== username)
+                .map((user) => (
+                  <option key={user} value={user}>
+                    {user}
+                  </option>
+                ))}
             </select>
           </div>
         </div>

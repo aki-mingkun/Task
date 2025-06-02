@@ -20,12 +20,12 @@ def save_all_users(users):
     db.set('users', users)
     db.save()
 
-def get_user_tasks_list(username):
-    tasks = db.get(f'tasks_{username}')
+def get_all_tasks():
+    tasks = db.get('all_tasks')
     return tasks if tasks else []
 
-def save_user_tasks_list(username, tasks):
-    db.set(f'tasks_{username}', tasks)
+def save_all_tasks(tasks):
+    db.set('all_tasks', tasks)
     db.save()
 
 @app.route('/')
@@ -37,15 +37,14 @@ def register():
     data = request.json
     username = data.get('username')
     password = data.get('password')
-    if not username or not password:
-        return jsonify({"message": "Username and password required"}), 400
+    email = data.get('email')
+    if not username or not password or not email:
+        return jsonify({"message": "Username, email and password required"}), 400
     users = get_all_users()
     if username in users:
         return jsonify({"message": "User already exists!"}), 400
-    users[username] = {"password": password}
+    users[username] = {"password": password, "email": email}
     save_all_users(users)
-    db.set(f'tasks_{username}', [])
-    db.save()
     return jsonify({"message": "User registered successfully!"}), 201
 
 @app.route('/login', methods=['POST', 'OPTIONS'])
@@ -58,24 +57,25 @@ def login():
     users = get_all_users()
     if username in users and users[username]['password'] == password:
         return jsonify({"message": "Login successful!"}), 200
-    return jsonify({"message": "Invalid credentials!"}), 401
+    return jsonify({"message": "Invalid credentials!"}, 401)
 
 @app.route('/users', methods=['GET'])
 def get_users():
     users = get_all_users()
-    return jsonify([{"username": u} for u in users.keys()]), 200
+    return jsonify([{"username": u, "email": users[u].get("email", "")} for u in users.keys()]), 200
 
 @app.route('/task', methods=['POST'])
 def create_task():
     data = request.json
-    print("API /task received data:", data)
     username = data.get('username')
     task_data = data.get('task')
     if not username or not task_data:
-        print("Missing username or task_data:", data)
         return jsonify({"message": "Username and task required"}), 400
     task_id = str(uuid.uuid4())
-    assigned_user = task_data.get('assigned_user', username)
+    assigned_user = task_data.get('assigned_user') or username
+    # Đảm bảo assigned_user và created_by luôn là string hợp lệ
+    if not assigned_user:
+        assigned_user = username
     task = {
         "id": task_id,
         "title": task_data.get('title'),
@@ -86,65 +86,77 @@ def create_task():
         "created_by": username,
         "assigned_user": assigned_user
     }
-    # Lưu vào danh sách task của người tạo
-    creator_tasks = get_user_tasks_list(username)
-    creator_tasks.append(task)
-    save_user_tasks_list(username, creator_tasks)
-    # Nếu assigned_user khác người tạo, lưu vào danh sách task của người được giao
-    if assigned_user != username:
-        assigned_tasks = get_user_tasks_list(assigned_user)
-        assigned_tasks.append(task)
-        save_user_tasks_list(assigned_user, assigned_tasks)
-    print("Created task:", task)
+    all_tasks = get_all_tasks()
+    all_tasks.append(task)
+    save_all_tasks(all_tasks)
     return jsonify({"message": "Task added successfully!", "task": task}), 201
 
 @app.route('/tasks/<username>', methods=['GET'])
 def get_user_tasks(username):
-    print(f"API /tasks/{username} called")
-    users = get_all_users()
-    all_tasks = []
-    seen_ids = set()
-    for u in users:
-        tasks = get_user_tasks_list(u)
-        print(f"Tasks for user {u}:", tasks)
-        for t in tasks:
-            # Bỏ qua task nếu thiếu trường bắt buộc (tránh lỗi frontend)
-            if not isinstance(t, dict) or 'id' not in t or 'created_by' not in t or 'assigned_user' not in t:
-                continue
-            if (t['created_by'] == username or t['assigned_user'] == username) and t['id'] not in seen_ids:
-                all_tasks.append(t)
-                seen_ids.add(t['id'])
-    print(f"Tasks returned for {username}:", all_tasks)
-    return jsonify({"tasks": all_tasks}), 200
+    all_tasks = get_all_tasks()
+    user_tasks = [t for t in all_tasks if t.get('created_by') == username or t.get('assigned_user') == username]
+    return jsonify({"tasks": user_tasks}), 200
+
+@app.route('/task/<task_id>', methods=['PUT'])
+def update_task(task_id):
+    data = request.json
+    all_tasks = get_all_tasks()
+    updated = False
+    old_assigned_user = None
+    for t in all_tasks:
+        if t['id'] == task_id:
+            old_assigned_user = t.get('assigned_user')
+            # Chỉ update các trường hợp hợp lệ, không ghi đè toàn bộ object
+            for key in ['title', 'description', 'due_date', 'status', 'priority', 'assigned_user']:
+                if key in data:
+                    t[key] = data[key]
+            updated = True
+            break
+    if updated:
+        # Nếu assigned_user thay đổi, đảm bảo task chỉ xuất hiện ở user mới và không còn ở user cũ
+        if 'assigned_user' in data and old_assigned_user and old_assigned_user != data['assigned_user']:
+            # Không cần thao tác gì thêm vì all_tasks là danh sách chung, filter theo assigned_user ở frontend/backend
+            pass
+        save_all_tasks(all_tasks)
+        return jsonify({"message": "Task updated", "task": t}), 200
+    return jsonify({"message": "Task not found"}), 404
+
+@app.route('/task/<task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    all_tasks = get_all_tasks()
+    new_tasks = [t for t in all_tasks if t['id'] != task_id]
+    if len(new_tasks) == len(all_tasks):
+        return jsonify({"message": "Task not found"}), 404
+    save_all_tasks(new_tasks)
+    return jsonify({"message": "Task deleted"}), 200
 
 @app.route('/dashboard/<username>', methods=['GET'])
 def dashboard(username):
-    # Lấy task do user tạo
-    users = get_all_users()
-    created = []
-    assigned = []
-    seen_ids = set()
-    for u in users:
-        tasks = get_user_tasks_list(u)
-        for t in tasks:
-            if t['id'] in seen_ids:
-                continue
-            if t['created_by'] == username:
-                created.append(t)
-            elif t['assigned_user'] == username:
-                assigned.append(t)
-            seen_ids.add(t['id'])
-    completed = [t for t in created if t['status'] == 'completed']
-    in_progress = [t for t in created if t['status'] == 'in_progress']
-    overdue = [t for t in created if t['status'] == 'open']
+    all_tasks = get_all_tasks()
+    created = [t for t in all_tasks if t.get('created_by') == username]
+    assigned = [t for t in all_tasks if t.get('assigned_user') == username]
+    involved = [t for t in all_tasks if t.get('created_by') == username or t.get('assigned_user') == username]
+    # Thống kê trạng thái cho toàn bộ hệ thống (tất cả user đều giống nhau)
+    completed = [t for t in all_tasks if t.get('status') == 'completed']
+    in_progress = [t for t in all_tasks if t.get('status') == 'in_progress']
+    overdue = [t for t in all_tasks if t.get('status') == 'open']
+    # Thống kê trạng thái cho task được giao cho user này (nếu muốn hiển thị riêng)
+    assigned_completed = [t for t in assigned if t.get('status') == 'completed']
+    assigned_in_progress = [t for t in assigned if t.get('status') == 'in_progress']
+    assigned_open = [t for t in assigned if t.get('status') == 'open']
     return jsonify({
         "total_created": len(created),
         "total_assigned": len(assigned),
-        "completed_created": len(completed),
-        "in_progress_created": len(in_progress),
-        "overdue_created": len(overdue),
+        "total_involved": len(involved),
+        "completed_created": len(completed),      # Thống kê toàn hệ thống
+        "in_progress_created": len(in_progress),  # Thống kê toàn hệ thống
+        "overdue_created": len(overdue),          # Thống kê toàn hệ thống
+        "completed_assigned": len(assigned_completed),
+        "in_progress_assigned": len(assigned_in_progress),
+        "open_assigned": len(assigned_open),
         "tasks_created": created,
-        "tasks_assigned": assigned
+        "tasks_assigned": assigned,
+        "tasks_involved": involved
     }), 200
 
 @app.route('/user/<username>', methods=['DELETE'])
@@ -154,8 +166,10 @@ def delete_user(username):
         return jsonify({"message": "User not found"}), 404
     del users[username]
     save_all_users(users)
-    db.rem(f'tasks_{username}')
-    db.save()
+    # Xóa các task liên quan đến user này
+    all_tasks = get_all_tasks()
+    all_tasks = [t for t in all_tasks if t.get('created_by') != username and t.get('assigned_user') != username]
+    save_all_tasks(all_tasks)
     return jsonify({"message": f"User '{username}' deleted"}), 200
 
 if __name__ == '__main__':
