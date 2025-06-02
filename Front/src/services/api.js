@@ -1,0 +1,26 @@
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://127.0.0.1:5000',
+});
+
+export const signup = async (userData) => {
+  const response = await api.post('/register', userData);
+  return response.data;
+};
+
+export const login = async (userData) => {
+  const response = await api.post('/login', userData);
+  return response.data;
+};
+
+export const getTasks = async (username) => {
+  if (!username) throw new Error('Username is required to get tasks');
+  const response = await api.get(`/tasks/${username}`);
+  return response.data.tasks;
+};
+
+export const createTask = async (taskData) => {
+  const response = await api.post('/task', taskData);
+  return response.data;
+};
