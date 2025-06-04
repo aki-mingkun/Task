@@ -94,6 +94,14 @@ Clone this repository to your desired folder:
   https://github.com/kessie2862/Task-Manager-Frontend.git
 ```
 
+**Project structure:**
+```
+Task/
+│
+├── Back/      # Backend code (Flask)
+└── Front/     # Frontend code (React)
+```
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Install

@@ -15,7 +15,8 @@ const Dashboard = () => {
     if (!username) return;
     const fetchSummary = async () => {
       try {
-        const res = await axios.get(`http://127.0.0.1:5000/dashboard/${username}`);
+        // Đổi 'http://backend:5000/dashboard' thành IP backend thực tế
+        const res = await axios.get(`http://10.6.136.246:5000/dashboard/${username}`);
         setSummary(res.data);
       } catch (err) {
         setSummary(null);

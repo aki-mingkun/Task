@@ -45,7 +45,8 @@ const TaskForm = () => {
     // Lấy danh sách user từ backend
     const fetchUsers = async () => {
       try {
-        const res = await axios.get('http://127.0.0.1:5000/users');
+        // Đổi 'http://backend:5000/users' thành IP backend thực tế
+        const res = await axios.get('http://10.6.136.246:5000/users');
         setUsers(res.data.map((u) => u.username));
       } catch (err) {
         setUsers([]);

@@ -13,11 +13,11 @@ Tạo cấu trúc thư mục cho dự án của bạn như sau:
 ```
 project/
 │
-├── backend/
+├── Back/
 │   ├── app.py
 │   └── db.py
 │
-└── front/
+└── Front/
     ├── index.html
     └── script.js
 ```
@@ -197,16 +197,22 @@ async function getTasks() {
 
 ### Bước 7: Chạy ứng dụng
 
-1. Chạy backend bằng cách vào thư mục `backend` và chạy lệnh:
+1. Chạy backend bằng cách vào thư mục `Back` và chạy lệnh:
 
 ```bash
+cd Back
 python app.py
 ```
 
+> **Lưu ý:** Để truy cập backend từ máy khác trong cùng mạng LAN, hãy dùng địa chỉ IP của máy chủ (ví dụ: `http://192.168.x.x:5000`) thay vì `localhost` hoặc `backend`.  
+> **Đồng thời, trong code frontend (JS hoặc React), bạn phải sửa các URL API từ `localhost` hoặc `backend` thành đúng địa chỉ IP backend, ví dụ:**  
+> ```js
+> // Sai: fetch('http://localhost:5000/...')
+> // Sai: fetch('http://backend:5000/...')
+> // Đúng: fetch('http://192.168.x.x:5000/...')
+> ```
+> Nếu không sửa, các máy khác sẽ không truy cập được backend và dữ liệu sẽ không đồng bộ.
+
 2. Mở file `index.html` trong trình duyệt để sử dụng frontend.
 
-### Lưu ý
-
-- Đảm bảo rằng bạn đã cài đặt Python và các thư viện cần thiết.
-- Bạn có thể mở rộng và cải thiện mã nguồn này theo nhu cầu của dự án.
-- Để triển khai thực tế, bạn nên xem xét các biện pháp bảo mật như mã hóa mật khẩu và xác thực người dùng.
+> **Nếu bạn dùng Docker hoặc docker-compose, các service đã được cấu hình để lắng nghe trên tất cả các địa chỉ mạng (`0.0.0.0`). Khi đó, bạn cũng truy cập qua địa chỉ IP của máy chủ, ví dụ: `http://192.168.x.x:80` cho frontend hoặc `http://192.168.x.x:5000` cho backend.

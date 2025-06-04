@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./Back
+    container_name: taskmanager-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./Back/data:/app/data
+    environment:
+      - FLASK_ENV=production
+    restart: unless-stopped
+
+  frontend:
+    build: ./Front
+    container_name: taskmanager-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes: {}

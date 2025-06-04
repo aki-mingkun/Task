@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:5000',
+  baseURL: 'http://10.6.136.246:5000', // Đảm bảo đây là IP backend thật
 });
 
 export const signup = async (userData) => {
